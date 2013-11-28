@@ -66,7 +66,6 @@ import com.vaadin.terminal.gwt.client.Paintable;
 import com.vaadin.terminal.gwt.client.UIDL;
 import com.vaadin.terminal.gwt.client.VConsole;
 
-
 /**
  * Client side widget which communicates with the server. Messages from the server are shown as HTML and mouse clicks are sent to the server.
  */
@@ -235,7 +234,6 @@ public class VGoogleMap extends Composite implements Paintable {
 
         // Save the client side identifier (paintable id) for the widget
         paintableId = uidl.getId();
-
 
         logLevel = uidl.getIntAttribute(ATTR_LOG_LEVEL);
 
@@ -655,8 +653,6 @@ public class VGoogleMap extends Composite implements Paintable {
         return Polygon.newInstance(opts);
     }
 
-
-
     private String getMarkerIconURL(Marker marker) {
         if (marker.getIcon_MarkerImage() == null)
             return null;
@@ -874,26 +870,26 @@ public class VGoogleMap extends Composite implements Paintable {
                                 replaceMarker = true;
                             }
                         }
-                    } else {
-                        marker = jsMarker.createMarker();
 
-                        if (marker != null) {
-                            marker.setMap(map);
-
-                            // Add dragEnd handlers to marker
-                            marker.addDragEndHandler(new MarkerDragEndHandlers(marker));
-                            marker.addClickHandler(new InfoWindowOpener(jsMarker.getId()));
-
-                            knownMarkers.put(jsMarker.getId(), marker);
-                        }
                     }
 
-                    //                    if (replaceMarker) {
-                    //                        log(1, "Replacing marker " + marker.getTitle());
-                    //                        // map.removeOverlay(marker);
-                    //                        marker.setMap((MapWidget) null);
-                    //                        markersFromThisUpdate.remove(marker);
-                    //                    }
+                    if (replaceMarker) {
+                        log(1, "Replacing marker " + marker.getTitle());
+                        markersFromThisUpdate.remove(marker);
+                        marker.clear();
+                    }
+
+                    marker = jsMarker.createMarker();
+
+                    if (marker != null) {
+                        marker.setMap(map);
+
+                        // Add dragEnd handlers to marker
+                        marker.addDragEndHandler(new MarkerDragEndHandlers(marker));
+                        marker.addClickHandler(new InfoWindowOpener(jsMarker.getId()));
+
+                        knownMarkers.put(jsMarker.getId(), marker);
+                    }
 
                 }
 
