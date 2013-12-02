@@ -16,6 +16,8 @@ public class BasicMarker implements Marker {
 
     private Point2D.Double iconAnchor;
 
+    private Point2D.Double iconOrigin;
+
     private String title = null;
 
     private InfoWindowTab[] infoWindowContent = null;
@@ -73,6 +75,15 @@ public class BasicMarker implements Marker {
 
     public void setIconAnchor(Point2D.Double iconAnchor) {
         this.iconAnchor = iconAnchor;
+    }
+
+    @Override
+    public Point2D.Double getIconOrigin() {
+        return iconOrigin;
+    }
+
+    public void setIconOrigin(Point2D.Double iconOrigin) {
+        this.iconOrigin = iconOrigin;
     }
 
     @Override

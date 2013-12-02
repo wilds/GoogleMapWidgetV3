@@ -16,6 +16,8 @@ public interface Marker {
 
     public Point2D.Double getIconAnchor();
 
+    public Point2D.Double getIconOrigin();
+
     public String getTitle();
 
     public InfoWindowTab[] getInfoWindowContent();

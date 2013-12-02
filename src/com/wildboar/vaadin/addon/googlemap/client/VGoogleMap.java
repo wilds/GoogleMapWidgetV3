@@ -824,6 +824,9 @@ public class VGoogleMap extends Composite implements Paintable {
                         if (marker == null)
                             continue;
 
+                        // all set methods are useless because the marker is replaced with new one
+                        // TODO find a way to fix setting methods
+
                         // if title is changed
                         if (jsMarker.getTitle() != null && !jsMarker.getTitle().equals(marker.getTitle())) {
                             replaceMarker = true;
@@ -851,14 +854,26 @@ public class VGoogleMap extends Composite implements Paintable {
                         if (jsMarker.getIcon() != null) {
                             if (!jsMarker.getIcon().equals(getMarkerIconURL(marker))) {
                                 MarkerImage icon = MarkerImage.newInstance(jsMarker.getIcon());
-                                icon.setOrigin(Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY()));
+                                if (jsMarker.hasOriginPoint())
+                                    icon.setOrigin(Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY()));
+                                if (jsMarker.hasAnchorPoint())
+                                    icon.setAnchor(Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY()));
                                 marker.setIcon(icon);
                                 replaceMarker = true;
-                            } else if (jsMarker.getIconAnchorX() != null && jsMarker.getIconAnchorY() != null) {
-                                Point newAnchor = Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY());
-                                if (marker.getIcon_MarkerImage() != null && !newAnchor.equals(marker.getIcon_MarkerImage().getAnchor())) {
-                                    marker.getIcon_MarkerImage().setOrigin(newAnchor);
-                                    replaceMarker = true;
+                            } else {
+                                if (jsMarker.hasOriginPoint()) {
+                                    Point newOrigin = Point.newInstance(jsMarker.getIconOriginX(), jsMarker.getIconOriginY());
+                                    if (marker.getIcon_MarkerImage() != null && !newOrigin.equals(marker.getIcon_MarkerImage().getOrigin())) {
+                                        marker.getIcon_MarkerImage().setOrigin(newOrigin);
+                                        replaceMarker = true;
+                                    }
+                                }
+                                if (jsMarker.hasAnchorPoint()) {
+                                    Point newAnchor = Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY());
+                                    if (marker.getIcon_MarkerImage() != null && !newAnchor.equals(marker.getIcon_MarkerImage().getAnchor())) {
+                                        marker.getIcon_MarkerImage().setAnchor(newAnchor);
+                                        replaceMarker = true;
+                                    }
                                 }
                             }
                         }
@@ -1029,12 +1044,28 @@ public class VGoogleMap extends Composite implements Paintable {
             return getString("icon");
         }
 
+        public boolean hasAnchorPoint() {
+            return getIconAnchorX() != null && getIconAnchorY() != null;
+        }
+
         public Double getIconAnchorX() {
             return getNumber("iconAnchorX");
         }
 
         public Double getIconAnchorY() {
             return getNumber("iconAnchorY");
+        }
+
+        public boolean hasOriginPoint() {
+            return getIconOriginX() != null && getIconOriginY() != null;
+        }
+
+        public Double getIconOriginX() {
+            return getNumber("iconOriginX");
+        }
+
+        public Double getIconOriginY() {
+            return getNumber("iconOriginY");
         }
 
         public String getInfoContent() {
@@ -1071,7 +1102,10 @@ public class VGoogleMap extends Composite implements Paintable {
             MarkerImage icon = null;
             if (jsMarker.getIcon() != null) {
                 icon = MarkerImage.newInstance(jsMarker.getIcon());
-                icon.setOrigin(Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY()));
+                if (jsMarker.hasOriginPoint())
+                    icon.setOrigin(Point.newInstance(jsMarker.getIconOriginX(), jsMarker.getIconOriginY()));
+                if (jsMarker.hasAnchorPoint())
+                    icon.setAnchor(Point.newInstance(jsMarker.getIconAnchorX(), jsMarker.getIconAnchorY()));
 
                 log(1, "Icon URL '" + jsMarker.getIcon() + "' at anchor point (" + jsMarker.getIconAnchorX() + "," + jsMarker.getIconAnchorY() + ")");
             }
