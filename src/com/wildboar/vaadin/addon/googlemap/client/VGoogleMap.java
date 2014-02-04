@@ -3,6 +3,7 @@ package com.wildboar.vaadin.addon.googlemap.client;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,6 +23,8 @@ import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONValue;
+import com.google.gwt.maps.client.LoadApi;
+import com.google.gwt.maps.client.LoadApi.LoadLibrary;
 import com.google.gwt.maps.client.MapOptions;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
@@ -58,8 +61,27 @@ import com.google.gwt.maps.client.overlays.Polygon;
 import com.google.gwt.maps.client.overlays.PolygonOptions;
 import com.google.gwt.maps.client.overlays.Polyline;
 import com.google.gwt.maps.client.overlays.PolylineOptions;
+import com.google.gwt.maps.client.services.DirectionsRenderer;
+import com.google.gwt.maps.client.services.DirectionsRendererOptions;
+import com.google.gwt.maps.client.services.DirectionsRequest;
+import com.google.gwt.maps.client.services.DirectionsResult;
+import com.google.gwt.maps.client.services.DirectionsResultHandler;
+import com.google.gwt.maps.client.services.DirectionsService;
+import com.google.gwt.maps.client.services.DirectionsStatus;
+import com.google.gwt.maps.client.services.DirectionsWaypoint;
+import com.google.gwt.maps.client.services.Distance;
+import com.google.gwt.maps.client.services.DistanceMatrixRequest;
+import com.google.gwt.maps.client.services.DistanceMatrixRequestHandler;
+import com.google.gwt.maps.client.services.DistanceMatrixResponse;
+import com.google.gwt.maps.client.services.DistanceMatrixResponseElement;
+import com.google.gwt.maps.client.services.DistanceMatrixResponseRow;
+import com.google.gwt.maps.client.services.DistanceMatrixService;
+import com.google.gwt.maps.client.services.DistanceMatrixStatus;
+import com.google.gwt.maps.client.services.Duration;
+import com.google.gwt.maps.client.services.TravelMode;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.vaadin.terminal.gwt.client.ApplicationConnection;
 import com.vaadin.terminal.gwt.client.Paintable;
@@ -122,6 +144,12 @@ public class VGoogleMap extends Composite implements Paintable {
     public static final String ATTR_INFOWINDOW_MARKER = "marker";
     public static final String ATTR_INFOWINDOW_CLOSE = "closeInfoWindow";
 
+    public static final String ATTR_DIRECTION_ORIGIN = "drection.origin";
+    public static final String ATTR_DIRECTION_DESTINATION = "direction.destination";
+    public static final String ATTR_DIRECTION_TRAVELMODE = "direction.travel";
+    public static final String ATTR_DIRECTION_WPS = "direction.wp";
+    public static final String TAG_DIRECTION_WPS = "direction.wps";
+
     /* VARIABLES */
     public static final String VAR_ZOOM = "zoom";
     public static final String VAR_CENTER = "center";
@@ -155,6 +183,11 @@ public class VGoogleMap extends Composite implements Paintable {
     private int logLevel = 0;
 
     private MapOptions mapOpt;
+
+    private boolean apiloaded = false;
+    private LinkedList<UIDL> stack = new LinkedList<UIDL>();
+    private ArrayList<LoadLibrary> loadLibraries;
+    private final SimplePanel wrapperPanel;
 
     protected ClickMapHandler clickMapHanler = new ClickMapHandler() {
 
@@ -199,22 +232,59 @@ public class VGoogleMap extends Composite implements Paintable {
         }
     };
 
+    private Runnable onLoad = new Runnable() {
+        @Override
+        public void run() {
+            apiloaded = true;
+            loadMap();
+        }
+    };
+
     /**
      * The constructor should first call super() to initialize the component and then handle any initialization relevant to Vaadin.
      */
     public VGoogleMap() {
+
+        // load all the libs for use in the maps
+        loadLibraries = new ArrayList<LoadLibrary>();
+        // loadLibraries.add(LoadLibrary.ADSENSE);
+        loadLibraries.add(LoadLibrary.DRAWING);
+        loadLibraries.add(LoadLibrary.GEOMETRY);
+        // loadLibraries.add(LoadLibrary.PANORAMIO);
+        // loadLibraries.add(LoadLibrary.PLACES);
+        // loadLibraries.add(LoadLibrary.WEATHER);
+        loadLibraries.add(LoadLibrary.VISUALIZATION);
+
+        wrapperPanel = new SimplePanel();
+        initWidget(wrapperPanel); // All Composites need to call initWidget()
+    }
+
+    /**
+     * Once the API has been loaded, the MapWidget can be initialized. This
+     * method will initialize the MapWidget and place it inside the wrapper from
+     * the composite root.
+     */
+    private void loadMap() {
         mapOpt = MapOptions.newInstance();
+
         map = new MapWidget(mapOpt);
+        wrapperPanel.add(map);
 
         map.addDragEndHandler(dragEndMapHandler);
         map.addClickHandler(clickMapHanler);
         map.addIdleHandler(idleMapHandler);
 
-        initWidget(map); // All Composites need to call initWidget()
-
         // This method call of the Paintable interface sets the component
         // style name in DOM tree
         setStyleName(CLASSNAME);
+
+        // Update all the uidl requests that have been made
+        if (stack != null) {
+            for(UIDL uidl : stack) {
+                updateFromUIDL(uidl, client);
+            }
+        }
+        stack = null;
     }
 
     /**
@@ -231,6 +301,18 @@ public class VGoogleMap extends Composite implements Paintable {
         // Save reference to server connection object to be able to send
         // user interaction later
         this.client = client;
+        if (!apiloaded) {
+            if (uidl.hasAttribute(ATTR_API_KEY)) {
+                LoadApi.go(onLoad, loadLibraries, false, "key=" + uidl.getStringAttribute(ATTR_API_KEY));
+            } else {
+                LoadApi.go(onLoad, loadLibraries, false);
+            }
+            if (stack == null) {
+                VConsole.error("The ArrayList holding UIDL updates was NULL, this should never happen!");
+            }
+            stack.add(uidl);
+            return;
+        }
 
         // Save the client side identifier (paintable id) for the widget
         paintableId = uidl.getId();
@@ -285,7 +367,7 @@ public class VGoogleMap extends Composite implements Paintable {
                     panControlOptions.setPosition(ControlPosition.fromValue(val));
                     mapOpt.setPanControlOptions(panControlOptions);
                     optChanged = true;
-                    log(1, "setPanControlOptions");
+                    //log(1, "setPanControlOptions");
                 }
             }
         }
@@ -713,6 +795,101 @@ public class VGoogleMap extends Composite implements Paintable {
         client.updateVariable(paintableId, VAR_MARKER_CLICKED, mId, true);
     }
 
+    // working on direction
+    @SuppressWarnings("unused")
+    private void drawDirections(LatLng origin, LatLng destination, TravelMode travelMode, List<LatLng> wps) {
+        DirectionsRequest request = DirectionsRequest.newInstance();
+        request.setOrigin(origin);
+        request.setDestination(destination);
+        request.setTravelMode(travelMode);
+        request.setOptimizeWaypoints(true);
+
+        // Stop over
+        if (wps != null && !wps.isEmpty()) {
+            JsArray<DirectionsWaypoint> waypoints = JsArray.createArray().cast();
+
+            for (LatLng wp : wps) {
+                DirectionsWaypoint waypoint = DirectionsWaypoint.newInstance();
+                waypoint.setStopOver(true);
+                waypoint.setLocation(wp);
+                waypoints.push(waypoint);
+            }
+
+            request.setWaypoints(waypoints);
+        }
+
+        DirectionsRendererOptions options = DirectionsRendererOptions.newInstance();
+        final DirectionsRenderer directionsDisplay = DirectionsRenderer.newInstance(options);
+        directionsDisplay.setMap(map);
+
+        DirectionsService o = DirectionsService.newInstance();
+        o.route(request, new DirectionsResultHandler() {
+            public void onCallback(DirectionsResult result, DirectionsStatus status) {
+                // TODO fire event
+                if (status == DirectionsStatus.OK) {
+                    directionsDisplay.setDirections(result);
+                } else if (status == DirectionsStatus.INVALID_REQUEST) {
+
+                } else if (status == DirectionsStatus.MAX_WAYPOINTS_EXCEEDED) {
+
+                } else if (status == DirectionsStatus.NOT_FOUND) {
+
+                } else if (status == DirectionsStatus.OVER_QUERY_LIMIT) {
+
+                } else if (status == DirectionsStatus.REQUEST_DENIED) {
+
+                } else if (status == DirectionsStatus.UNKNOWN_ERROR) {
+
+                } else if (status == DirectionsStatus.ZERO_RESULTS) {
+
+                }
+            }
+        });
+    }
+
+    @SuppressWarnings("unused")
+    private void getDistance(LatLng origin, LatLng destination, TravelMode travelMode) {
+        DistanceMatrixRequest request = DistanceMatrixRequest.newInstance();
+        request.setOrigins(ArrayHelper.toJsArray(origin));
+        request.setDestinations(ArrayHelper.toJsArray(destination));
+        request.setTravelMode(travelMode);
+
+        DistanceMatrixService o = DistanceMatrixService.newInstance();
+        o.getDistanceMatrix(request, new DistanceMatrixRequestHandler() {
+            public void onCallback(DistanceMatrixResponse response, DistanceMatrixStatus status) {
+                // TODO fire event
+                if (status == DistanceMatrixStatus.INVALID_REQUEST) {
+
+                } else if (status == DistanceMatrixStatus.MAX_DIMENSIONS_EXCEEDED) {
+
+                } else if (status == DistanceMatrixStatus.MAX_ELEMENTS_EXCEEDED) {
+
+                } else if (status == DistanceMatrixStatus.OK) {
+
+                    JsArray<DistanceMatrixResponseRow> rows = response.getRows();
+
+                    DistanceMatrixResponseRow d = rows.get(0);
+                    JsArray<DistanceMatrixResponseElement> elements = d.getElements();
+                    for (int i = 0; i < elements.length(); i++) {
+                        DistanceMatrixResponseElement e = elements.get(i);
+                        Distance distance = e.getDistance();
+                        Duration duration = e.getDuration();
+                        String html = "&nbsp;&nbsp;Distance=" + distance.getText() + " Duration=" + duration.getText() + " ";
+                    }
+
+                } else if (status == DistanceMatrixStatus.OVER_QUERY_LIMIT) {
+
+                } else if (status == DistanceMatrixStatus.REQUEST_DENIED) {
+
+                } else if (status == DistanceMatrixStatus.UNKNOWN_ERROR) {
+
+                }
+
+            }
+        });
+
+    }
+
     private void log(int level, String message) {
         if (level <= logLevel) {
             // Show message in GWT console
@@ -937,23 +1114,24 @@ public class VGoogleMap extends Composite implements Paintable {
     @Override
     public void setHeight(String height) {
         super.setHeight(height);
-
+        wrapperPanel.setHeight(height);
         if (map != null) {
             map.setHeight(height);
             MapHandlerRegistration.trigger(map, MapEventType.RESIZE);
         } else {
-            VConsole.error("Set height attempted before map initialized");
+        //    VConsole.error("Set height attempted before map initialized");
         }
     }
 
     @Override
     public void setWidth(String width) {
         super.setWidth(width);
+        wrapperPanel.setWidth(width);
         if (map != null) {
             map.setWidth(width);
             MapHandlerRegistration.trigger(map, MapEventType.RESIZE);
         } else {
-            VConsole.error("Set width attempted before map initialized");
+        //    VConsole.error("Set width attempted before map initialized");
         }
     }
 

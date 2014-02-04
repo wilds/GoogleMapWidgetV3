@@ -2,6 +2,7 @@ package com.wildboar.vaadin.addon.googlemap.overlay;
 
 import java.awt.geom.Point2D;
 
+@SuppressWarnings("serial")
 public class Polygon extends PolyOverlay {
 
     private String fillColor;

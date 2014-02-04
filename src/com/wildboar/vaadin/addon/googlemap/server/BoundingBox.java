@@ -2,6 +2,7 @@ package com.wildboar.vaadin.addon.googlemap.server;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.Serializable;
 
 /**
  * @author Wilds
@@ -9,7 +10,8 @@ import java.awt.geom.Rectangle2D;
  *         This class takes in points and determines a bounding box that will surround the points.
  *
  */
-public class BoundingBox {
+@SuppressWarnings("serial")
+public class BoundingBox implements Serializable {
     /** distance less than EPSILON is considered zero */
     public static double EPSILON = 1e-6;
 

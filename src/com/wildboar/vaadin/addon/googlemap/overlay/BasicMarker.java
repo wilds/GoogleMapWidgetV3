@@ -1,10 +1,12 @@
 package com.wildboar.vaadin.addon.googlemap.overlay;
 
 import java.awt.geom.Point2D;
+import java.io.Serializable;
 
 import com.vaadin.ui.Component;
 
-public class BasicMarker implements Marker {
+@SuppressWarnings("serial")
+public class BasicMarker implements Marker, Serializable {
 
     private Long id;
 

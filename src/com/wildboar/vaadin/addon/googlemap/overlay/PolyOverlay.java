@@ -1,8 +1,10 @@
 package com.wildboar.vaadin.addon.googlemap.overlay;
 
 import java.awt.geom.Point2D;
+import java.io.Serializable;
 
-public class PolyOverlay {
+@SuppressWarnings("serial")
+public class PolyOverlay implements Serializable {
     private Long id;
 
     private Point2D.Double[] points;

@@ -29,6 +29,8 @@ public class BasicMarkerSource implements MarkerSource, Serializable {
             else
                 bb.addPoint(m.getLatLng());
         }
+        if (bb == null)
+            return null;
         return bb.getBounds();
     }
 

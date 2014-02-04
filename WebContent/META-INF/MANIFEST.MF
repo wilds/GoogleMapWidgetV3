@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Vaadin-License-Title: Apache 2.0
 Implementation-Vendor: Wilds
 Implementation-Title: GoogleMapWidgetV3
-Implementation-Version: 0.0.4
+Implementation-Version: 0.0.5
 Vaadin-Package-Version: 1
 Class-Path: 
 Vaadin-Widgetsets: com.wildboar.vaadin.addon.googlemap.GoogleMapWidget

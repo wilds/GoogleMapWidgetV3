@@ -118,6 +118,10 @@ public class GoogleMap extends AbstractComponent {
         this(application, new Point2D.Double(-0.001475, 51.477811), 14);
     }
 
+    public GoogleMap(Application application, Point2D.Double center, int zoom) {
+        this(application, "", center, zoom);
+    }
+
     /**
      * Construct a new instance of the map with given parameters.
      *
@@ -128,9 +132,10 @@ public class GoogleMap extends AbstractComponent {
      * @param zoom
      *            initial zoom level of the map
      */
-    public GoogleMap(Application application, Point2D.Double center, int zoom) {
+    public GoogleMap(Application application, String apiKey, Point2D.Double center, int zoom) {
         application.addResource(markerResource);
 
+        this.apiKey = apiKey;
         this.center = center;
         this.zoom = zoom;
     }
@@ -646,6 +651,8 @@ public class GoogleMap extends AbstractComponent {
 
     public void showAllMarker() {
         Pair<Point2D.Double, Point2D.Double> bb = markerSource.getBoundingBox();
+        if (bb == null)
+            return;
         setBounds(bb.getFirst(), bb.getSecond());
     }
 
