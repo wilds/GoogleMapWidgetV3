@@ -131,7 +131,7 @@ public class VGoogleMap extends Composite implements Paintable {
     public static final String ATTR_OVERLAY_OPACITY = "opacity";
     public static final String ATTR_OVERLAY_CLICKABLE = "clickable";
     public static final String ATTR_OVERLAY_FILLCOLOR = "fillcolor";        // POLYGON
-    public static final String ATTR_OVERLAY_FILLOPACITY = "fillopacity";    // POLYCON
+    public static final String ATTR_OVERLAY_FILLOPACITY = "fillopacity";    // POLYGON
 
     public static final String ATTR_MAPTYPE_NAME = "name";
     public static final String ATTR_MAPTYPE_MIN_ZOOM = "minZoom";

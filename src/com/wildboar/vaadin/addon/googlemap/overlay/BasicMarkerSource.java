@@ -73,8 +73,8 @@ public class BasicMarkerSource implements MarkerSource, Serializable {
                     markerJSON.append(",\"iconAnchorY\":").append(marker.getIconAnchor().y);
                 }
                 if (marker.getIconOrigin() != null) {
-                    markerJSON.append(",\"iconOriginX\":").append(marker.getIconAnchor().x);
-                    markerJSON.append(",\"iconOriginY\":").append(marker.getIconAnchor().y);
+                    markerJSON.append(",\"iconOriginX\":").append(marker.getIconOrigin().x);
+                    markerJSON.append(",\"iconOriginY\":").append(marker.getIconOrigin().y);
                 }
             }
 
