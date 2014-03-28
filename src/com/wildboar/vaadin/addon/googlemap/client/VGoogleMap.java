@@ -468,8 +468,8 @@ public class VGoogleMap extends Composite implements Paintable {
         }
 
         if (uidl.hasVariable(VAR_BOUNDS_NE)) {
-            LatLng sw = strToLatLng(uidl.getStringVariable(VAR_BOUNDS_NE));
-            LatLng ne = strToLatLng(uidl.getStringVariable(VAR_BOUNDS_SW));
+            LatLng sw = strToLatLng(uidl.getStringVariable(VAR_BOUNDS_SW));
+            LatLng ne = strToLatLng(uidl.getStringVariable(VAR_BOUNDS_NE));
             LatLngBounds fitBounds = LatLngBounds.newInstance(sw, ne);
             map.fitBounds(fitBounds);
         }
